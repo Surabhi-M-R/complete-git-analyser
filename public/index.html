@@ -8,24 +8,9 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Repository Analyzer</h1>
-        
-        <form id="analyzeForm">
-            <div class="form-group">
-                <label for="repoUrl">Repository URL:</label>
-                <input type="text" id="repoUrl" name="repoUrl" placeholder="https://github.com/username/repository" required>
-            </div>
-            <button type="submit">Analyze Repository</button>
-        </form>
-
-        <div style="margin: 20px 0;">
-            <button onclick="testConnection()" style="background-color: #6c757d; margin-right: 10px;">Test Connection</button>
-            <button onclick="testAnalyze()" style="background-color: #17a2b8;">Test Analyze Route</button>
-        </div>
-
-        <!-- Progress Chat Interface -->
-        <div id="progressChat" class="progress-chat" style="display: none;">
+    <div class="main-layout">
+        <!-- Left Side - Progress Chat -->
+        <div class="chat-sidebar">
             <div class="chat-header">
                 <h3>🔄 Analysis Progress</h3>
                 <button onclick="clearProgress()" class="clear-btn">Clear</button>
@@ -33,7 +18,27 @@
             <div id="progressMessages" class="chat-messages"></div>
         </div>
 
-        <div id="result"></div>
+        <!-- Right Side - Main Content -->
+        <div class="main-content">
+            <div class="container">
+                <h1>Repository Analyzer</h1>
+                
+                <form id="analyzeForm">
+                    <div class="form-group">
+                        <label for="repoUrl">Repository URL:</label>
+                        <input type="text" id="repoUrl" name="repoUrl" placeholder="https://github.com/username/repository" required>
+                    </div>
+                    <button type="submit">Analyze Repository</button>
+                </form>
+
+                <div style="margin: 20px 0;">
+                    <button onclick="testConnection()" style="background-color: #6c757d; margin-right: 10px;">Test Connection</button>
+                    <button onclick="testAnalyze()" style="background-color: #17a2b8;">Test Analyze Route</button>
+                </div>
+
+                <div id="result"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -61,11 +66,7 @@
 
         // Add progress message to chat
         function addProgressMessage(message, type = 'info') {
-            const progressChat = document.getElementById('progressChat');
             const progressMessages = document.getElementById('progressMessages');
-            
-            // Show progress chat if hidden
-            progressChat.style.display = 'block';
             
             const messageDiv = document.createElement('div');
             messageDiv.className = `progress-message ${type}`;
@@ -86,7 +87,6 @@
         function clearProgress() {
             const progressMessages = document.getElementById('progressMessages');
             progressMessages.innerHTML = '';
-            document.getElementById('progressChat').style.display = 'none';
         }
 
         // Initialize socket when page loads
