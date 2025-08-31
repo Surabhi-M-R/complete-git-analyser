@@ -4,214 +4,473 @@ const path = require('path');
 class FileChecker {
   checkForIssues(projectDir, analysis) {
     const issues = [];
-
-    // Check for missing .gitignore
-    if (!analysis.gitignore.exists) {
-      issues.push({
-        type: 'warning',
-        message: '.gitignore file is missing',
-        description: 'A .gitignore file prevents sensitive files and build artifacts from being committed to version control.',
-        recommendation: 'Add a .gitignore file with patterns for your project type.',
-        severity: 'medium'
-      });
-    } else {
-      // Check if .gitignore has common patterns
-      const gitignoreContent = fs.readFileSync(path.join(projectDir, '.gitignore'), 'utf8');
-      const commonPatterns = this.getCommonGitignorePatterns(analysis.projectType);
-      const missingPatterns = commonPatterns.filter(pattern => 
-        !gitignoreContent.includes(pattern)
-      );
-
-      if (missingPatterns.length > 0) {
-        issues.push({
-          type: 'warning',
-          message: '.gitignore is missing important patterns',
-          description: `Your .gitignore is missing patterns for: ${missingPatterns.join(', ')}`,
-          recommendation: 'Add these patterns to your .gitignore file.',
-          severity: 'low'
-        });
-      }
+    
+    console.log('Checking for issues and best practices...');
+    
+    // Check Dockerfile issues
+    if (analysis.dockerfile.exists) {
+      issues.push(...this.checkDockerfileIssues(analysis.dockerfile.content));
     }
-
-    // Check for .env file in repository (should not be committed)
-    if (analysis.env.exists) {
-      issues.push({
-        type: 'critical',
-        message: '.env file found in repository',
-        description: '.env files often contain sensitive information like API keys and database credentials.',
-        recommendation: 'Remove the .env file from version control and use .env.example with placeholder values instead.',
-        severity: 'high'
-      });
+    
+    // Check docker-compose issues
+    if (analysis.compose.exists) {
+      issues.push(...this.checkDockerComposeIssues(analysis.compose.content));
     }
-
-    // Check for missing .env.example
-    if (!fs.existsSync(path.join(projectDir, '.env.example'))) {
-      issues.push({
-        type: 'suggestion',
-        message: '.env.example file is missing',
-        description: 'An .env.example file helps other developers understand what environment variables are needed.',
-        recommendation: 'Create an .env.example file with placeholder values for all required environment variables.',
-        severity: 'low'
-      });
+    
+    // Check README issues
+    if (analysis.readme.exists) {
+      issues.push(...this.checkReadmeIssues(analysis.readme.content, analysis));
     }
-
-    // Check for large files that should be in .gitignore
-    const largeFiles = this.checkForLargeFiles(projectDir);
-    if (largeFiles.length > 0) {
-      issues.push({
-        type: 'warning',
-        message: 'Potential large files found in repository',
-        description: `The following files might be too large for version control: ${largeFiles.join(', ')}`,
-        recommendation: 'Consider adding these files to .gitignore or using Git LFS for large files.',
-        severity: 'medium'
-      });
-    }
-
-    // Check for common sensitive files
-    const sensitiveFiles = this.checkForSensitiveFiles(projectDir);
-    if (sensitiveFiles.length > 0) {
-      issues.push({
-        type: 'critical',
-        message: 'Potential sensitive files found',
-        description: `The following files might contain sensitive information: ${sensitiveFiles.join(', ')}`,
-        recommendation: 'Remove these files from version control immediately and rotate any exposed credentials.',
-        severity: 'high'
-      });
-    }
-
-    // Check for proper project structure
-    if (!analysis.structure.hasSrc && !analysis.structure.hasApp) {
-      issues.push({
-        type: 'suggestion',
-        message: 'Consider organizing code in src/ or app/ directory',
-        description: 'A well-organized project structure makes maintenance easier.',
-        recommendation: 'Move your source code to a dedicated directory like src/ or app/.',
-        severity: 'low'
-      });
-    }
-
+    
+    // Check security issues
+    issues.push(...this.checkSecurityIssues(analysis));
+    
+    // Check performance issues
+    issues.push(...this.checkPerformanceIssues(analysis));
+    
+    // Check best practices
+    issues.push(...this.checkBestPractices(analysis));
+    
+    // Check missing files
+    issues.push(...this.checkMissingFiles(analysis));
+    
+    // Check environment configuration
+    issues.push(...this.checkEnvironmentIssues(analysis));
+    
+    // Check dependency issues
+    issues.push(...this.checkDependencyIssues(analysis));
+    
+    console.log(`Found ${issues.length} issues and recommendations`);
+    
     return issues;
   }
 
-  getCommonGitignorePatterns(projectType) {
-    const commonPatterns = [
-      'node_modules/',
-      '.env',
-      '.DS_Store',
-      'dist/',
-      'build/',
-      '*.log',
-      'npm-debug.log*',
-      'yarn-debug.log*',
-      'yarn-error.log*',
-      'coverage/',
-      '.nyc_output'
-    ];
-
-    switch (projectType) {
-      case 'nodejs':
-        return commonPatterns.concat([
-          'package-lock.json',
-          'yarn.lock'
-        ]);
-      case 'python':
-        return commonPatterns.concat([
-          '__pycache__/',
-          '*.py[cod]',
-          '*$py.class',
-          '*.so',
-          '.Python',
-          'env/',
-          'venv/',
-          'ENV/',
-          'env.bak/',
-          'venv.bak/'
-        ]);
-      case 'java':
-        return commonPatterns.concat([
-          'target/',
-          '*.jar',
-          '*.war',
-          '*.ear',
-          '*.zip',
-          '*.tar.gz',
-          '*.rar',
-          'hs_err_pid*'
-        ]);
-      default:
-        return commonPatterns;
+  checkDockerfileIssues(content) {
+    const issues = [];
+    
+    if (!content) return issues;
+    
+    const lines = content.split('\n');
+    
+    // Check for common Dockerfile issues
+    if (!content.includes('FROM')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'critical',
+        title: 'Missing FROM instruction',
+        message: 'Dockerfile must start with a FROM instruction to specify the base image.'
+      });
     }
+    
+    if (!content.includes('WORKDIR')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'medium',
+        title: 'Missing WORKDIR instruction',
+        message: 'Consider adding a WORKDIR instruction to set the working directory for subsequent instructions.'
+      });
+    }
+    
+    if (content.includes('COPY . .') && !content.includes('.dockerignore')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'medium',
+        title: 'Missing .dockerignore file',
+        message: 'Consider adding a .dockerignore file to exclude unnecessary files from the build context.'
+      });
+    }
+    
+    if (content.includes('RUN apt-get update') && !content.includes('rm -rf /var/lib/apt/lists/*')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'medium',
+        title: 'Apt cache not cleaned',
+        message: 'Clean apt cache after installing packages to reduce image size.'
+      });
+    }
+    
+    if (content.includes('USER root') && !content.includes('USER ')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'high',
+        title: 'Running as root user',
+        message: 'Consider running the application as a non-root user for security.'
+      });
+    }
+    
+    if (!content.includes('HEALTHCHECK')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'low',
+        title: 'Missing health check',
+        message: 'Consider adding a HEALTHCHECK instruction to monitor application health.'
+      });
+    }
+    
+    if (content.includes('EXPOSE') && !content.includes('CMD') && !content.includes('ENTRYPOINT')) {
+      issues.push({
+        type: 'dockerfile',
+        severity: 'medium',
+        title: 'Missing CMD or ENTRYPOINT',
+        message: 'Dockerfile should specify how to run the application with CMD or ENTRYPOINT.'
+      });
+    }
+    
+    return issues;
   }
 
-  checkForLargeFiles(projectDir, maxSize = 1024 * 1024) { // 1MB default
-    const largeFiles = [];
+  checkDockerComposeIssues(content) {
+    const issues = [];
     
-    const checkDir = (dir) => {
-      const files = fs.readdirSync(dir);
-      
-      for (const file of files) {
-        const filePath = path.join(dir, file);
-        const stat = fs.statSync(filePath);
-        
-        if (stat.isDirectory()) {
-          // Skip node_modules and other directories that should be ignored
-          if (file !== 'node_modules' && !file.startsWith('.')) {
-            checkDir(filePath);
-          }
-        } else if (stat.size > maxSize) {
-          largeFiles.push(filePath.replace(projectDir + '/', ''));
-        }
-      }
-    };
+    if (!content) return issues;
     
-    checkDir(projectDir);
-    return largeFiles;
+    // Check for common docker-compose issues
+    if (!content.includes('version:')) {
+      issues.push({
+        type: 'docker-compose',
+        severity: 'low',
+        title: 'Missing version specification',
+        message: 'Consider specifying the docker-compose file version for better compatibility.'
+      });
+    }
+    
+    if (!content.includes('restart:')) {
+      issues.push({
+        type: 'docker-compose',
+        severity: 'medium',
+        title: 'Missing restart policy',
+        message: 'Consider adding a restart policy to ensure services restart automatically.'
+      });
+    }
+    
+    if (!content.includes('healthcheck:')) {
+      issues.push({
+        type: 'docker-compose',
+        severity: 'low',
+        title: 'Missing health checks',
+        message: 'Consider adding health checks to monitor service health.'
+      });
+    }
+    
+    if (content.includes('environment:') && !content.includes('.env')) {
+      issues.push({
+        type: 'docker-compose',
+        severity: 'medium',
+        title: 'Environment variables not externalized',
+        message: 'Consider using .env files for environment variables instead of hardcoding them.'
+      });
+    }
+    
+    if (!content.includes('networks:') && content.includes('services:')) {
+      issues.push({
+        type: 'docker-compose',
+        severity: 'low',
+        title: 'No custom networks defined',
+        message: 'Consider defining custom networks for better service isolation.'
+      });
+    }
+    
+    return issues;
   }
 
-  checkForSensitiveFiles(projectDir) {
-    const sensitivePatterns = [
-      /\.env$/,
-      /\.key$/,
-      /\.pem$/,
-      /id_rsa$/,
-      /id_dsa$/,
-      /\.keystore$/,
-      /\.jks$/,
-      /\.pfx$/,
-      /\.p12$/,
-      /\.crt$/,
-      /\.csr$/,
-      /\.der$/,
-      /config\.json$/,
-      /credentials\.json$/,
-      /\.sublime-project$/,
-      /\.sublime-workspace$/,
-      /\.htpasswd$/
-    ];
+  checkReadmeIssues(content, analysis) {
+    const issues = [];
     
-    const sensitiveFiles = [];
+    if (!content) return issues;
     
-    const checkDir = (dir) => {
-      const files = fs.readdirSync(dir);
-      
-      for (const file of files) {
-        const filePath = path.join(dir, file);
-        
-        if (fs.statSync(filePath).isDirectory()) {
-          checkDir(filePath);
-        } else {
-          for (const pattern of sensitivePatterns) {
-            if (pattern.test(file)) {
-              sensitiveFiles.push(filePath.replace(projectDir + '/', ''));
-              break;
-            }
-          }
+    const contentLower = content.toLowerCase();
+    
+    // Check for missing sections
+    if (!contentLower.includes('install') && !contentLower.includes('setup')) {
+      issues.push({
+        type: 'readme',
+        severity: 'medium',
+        title: 'Missing installation instructions',
+        message: 'README should include installation or setup instructions.'
+      });
+    }
+    
+    if (!contentLower.includes('usage') && !contentLower.includes('how to')) {
+      issues.push({
+        type: 'readme',
+        severity: 'medium',
+        title: 'Missing usage instructions',
+        message: 'README should include usage instructions or examples.'
+      });
+    }
+    
+    if (!contentLower.includes('docker') && (analysis.dockerfile.exists || analysis.compose.exists)) {
+      issues.push({
+        type: 'readme',
+        severity: 'low',
+        title: 'Missing Docker documentation',
+        message: 'README should include Docker usage instructions since Docker files are present.'
+      });
+    }
+    
+    if (!contentLower.includes('license')) {
+      issues.push({
+        type: 'readme',
+        severity: 'low',
+        title: 'Missing license information',
+        message: 'Consider adding license information to the README.'
+      });
+    }
+    
+    if (!contentLower.includes('contributing')) {
+      issues.push({
+        type: 'readme',
+        severity: 'low',
+        title: 'Missing contributing guidelines',
+        message: 'Consider adding contributing guidelines for open source projects.'
+      });
+    }
+    
+    return issues;
+  }
+
+  checkSecurityIssues(analysis) {
+    const issues = [];
+    
+    // Check for security-related issues
+    if (analysis.env.exists && analysis.env.files) {
+      for (const envFile of analysis.env.files) {
+        if (envFile.hasApiKeys && envFile.path !== '.env.example') {
+          issues.push({
+            type: 'security',
+            severity: 'high',
+            title: 'API keys in environment file',
+            message: `API keys found in ${envFile.path}. Ensure this file is not committed to version control.`
+          });
         }
       }
-    };
+    }
     
-    checkDir(projectDir);
-    return sensitiveFiles;
+    if (analysis.gitignore.exists && !analysis.gitignore.hasEnvFiles) {
+      issues.push({
+        type: 'security',
+        severity: 'high',
+        title: 'Environment files not in .gitignore',
+        message: 'Environment files (.env) should be added to .gitignore to prevent committing sensitive data.'
+      });
+    }
+    
+    if (analysis.package.exists && analysis.package.hasDependencies) {
+      // Check for known vulnerable dependencies (basic check)
+      const vulnerableDeps = ['lodash', 'moment', 'axios'];
+      for (const dep of vulnerableDeps) {
+        if (analysis.dependencies.utilities && analysis.dependencies.utilities.includes(dep)) {
+          issues.push({
+            type: 'security',
+            severity: 'medium',
+            title: `Potentially vulnerable dependency: ${dep}`,
+            message: `Consider updating ${dep} to the latest version and checking for security vulnerabilities.`
+          });
+        }
+      }
+    }
+    
+    return issues;
+  }
+
+  checkPerformanceIssues(analysis) {
+    const issues = [];
+    
+    // Check for performance-related issues
+    if (analysis.package.exists && analysis.package.hasDevDependencies) {
+      issues.push({
+        type: 'performance',
+        severity: 'low',
+        title: 'Dev dependencies in production',
+        message: 'Ensure dev dependencies are not included in production builds.'
+      });
+    }
+    
+    if (analysis.structure.hasLogs) {
+      issues.push({
+        type: 'performance',
+        severity: 'low',
+        title: 'Log directory present',
+        message: 'Consider using external logging services instead of local log files.'
+      });
+    }
+    
+    if (analysis.totalFiles > 1000) {
+      issues.push({
+        type: 'performance',
+        severity: 'medium',
+        title: 'Large number of files',
+        message: `Project contains ${analysis.totalFiles} files. Consider optimizing the project structure.`
+      });
+    }
+    
+    return issues;
+  }
+
+  checkBestPractices(analysis) {
+    const issues = [];
+    
+    // Check for best practices
+    if (!analysis.gitignore.exists) {
+      issues.push({
+        type: 'best-practice',
+        severity: 'medium',
+        title: 'Missing .gitignore file',
+        message: 'Consider adding a .gitignore file to exclude unnecessary files from version control.'
+      });
+    }
+    
+    if (analysis.package.exists && !analysis.package.hasScripts) {
+      issues.push({
+        type: 'best-practice',
+        severity: 'low',
+        title: 'No npm scripts defined',
+        message: 'Consider adding useful npm scripts for common tasks like build, test, and start.'
+      });
+    }
+    
+    if (!analysis.structure.hasTests) {
+      issues.push({
+        type: 'best-practice',
+        severity: 'medium',
+        title: 'No test directory found',
+        message: 'Consider adding tests to ensure code quality and reliability.'
+      });
+    }
+    
+    if (!analysis.structure.hasDocs) {
+      issues.push({
+        type: 'best-practice',
+        severity: 'low',
+        title: 'No documentation directory',
+        message: 'Consider adding a docs directory for project documentation.'
+      });
+    }
+    
+    if (analysis.ci.length === 0) {
+      issues.push({
+        type: 'best-practice',
+        severity: 'low',
+        title: 'No CI/CD configuration',
+        message: 'Consider adding CI/CD configuration for automated testing and deployment.'
+      });
+    }
+    
+    return issues;
+  }
+
+  checkMissingFiles(analysis) {
+    const issues = [];
+    
+    // Check for commonly missing files
+    if (!analysis.dockerfile.exists) {
+      issues.push({
+        type: 'missing-file',
+        severity: 'medium',
+        title: 'Missing Dockerfile',
+        message: 'Consider adding a Dockerfile for containerized deployment.'
+      });
+    }
+    
+    if (!analysis.compose.exists) {
+      issues.push({
+        type: 'missing-file',
+        severity: 'low',
+        title: 'Missing docker-compose.yml',
+        message: 'Consider adding docker-compose.yml for multi-service development and deployment.'
+      });
+    }
+    
+    if (!analysis.readme.exists) {
+      issues.push({
+        type: 'missing-file',
+        severity: 'high',
+        title: 'Missing README.md',
+        message: 'README.md is essential for project documentation and onboarding.'
+      });
+    }
+    
+    if (!analysis.gitignore.exists) {
+      issues.push({
+        type: 'missing-file',
+        severity: 'medium',
+        title: 'Missing .gitignore',
+        message: '.gitignore file is important to prevent committing unnecessary files.'
+      });
+    }
+    
+    if (analysis.linter.length === 0) {
+      issues.push({
+        type: 'missing-file',
+        severity: 'low',
+        title: 'No linter configuration',
+        message: 'Consider adding linter configuration for code quality and consistency.'
+      });
+    }
+    
+    return issues;
+  }
+
+  checkEnvironmentIssues(analysis) {
+    const issues = [];
+    
+    // Check environment-related issues
+    if (!analysis.env.exists) {
+      issues.push({
+        type: 'environment',
+        severity: 'low',
+        title: 'No environment files found',
+        message: 'Consider adding .env.example file to document required environment variables.'
+      });
+    } else if (analysis.env.files) {
+      const hasExample = analysis.env.files.some(file => file.path === '.env.example');
+      if (!hasExample) {
+        issues.push({
+          type: 'environment',
+          severity: 'medium',
+          title: 'Missing .env.example file',
+          message: 'Add .env.example file to document required environment variables.'
+        });
+      }
+    }
+    
+    return issues;
+  }
+
+  checkDependencyIssues(analysis) {
+    const issues = [];
+    
+    // Check dependency-related issues
+    if (analysis.package.exists && analysis.package.hasDependencies) {
+      if (analysis.dependencies.webFramework.length === 0) {
+        issues.push({
+          type: 'dependency',
+          severity: 'low',
+          title: 'No web framework detected',
+          message: 'Consider using a web framework for better structure and features.'
+        });
+      }
+      
+      if (analysis.dependencies.testing.length === 0) {
+        issues.push({
+          type: 'dependency',
+          severity: 'medium',
+          title: 'No testing framework detected',
+          message: 'Consider adding a testing framework to ensure code quality.'
+        });
+      }
+      
+      if (analysis.dependencies.buildTools.length === 0 && analysis.projectType === 'nodejs') {
+        issues.push({
+          type: 'dependency',
+          severity: 'low',
+          title: 'No build tool detected',
+          message: 'Consider adding a build tool like webpack, vite, or rollup for better development experience.'
+        });
+      }
+    }
+    
+    return issues;
   }
 }
 

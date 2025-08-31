@@ -6,8 +6,18 @@ const analyzer = require('./utils/analyzer');
 const generator = require('./utils/generator');
 const fileChecker = require('./utils/fileChecker');
 const archiver = require('archiver');
+const http = require('http');
+const socketIo = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 // Helper functions
@@ -28,6 +38,15 @@ function getContentType(fileType) {
   };
   return contentTypes[fileType] || 'text/plain';
 }
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Middleware
 app.use(express.json());
@@ -184,59 +203,165 @@ app.post('/analyze', async (req, res) => {
     const analysisId = Date.now();
     const projectDir = path.join(__dirname, 'temp', analysisId.toString());
     
+    // Send initial progress message
+    io.emit('progress', { 
+      type: 'info', 
+      message: '🚀 Starting repository analysis...',
+      timestamp: new Date().toISOString()
+    });
+    
     console.log('Creating project directory:', projectDir);
+    io.emit('progress', { 
+      type: 'info', 
+      message: '📁 Creating temporary directory...',
+      timestamp: new Date().toISOString()
+    });
     await fs.ensureDir(projectDir);
 
     // Clone the repository
     console.log('Cloning repository:', repoUrl);
+    io.emit('progress', { 
+      type: 'info', 
+      message: `📥 Cloning repository: ${repoUrl}`,
+      timestamp: new Date().toISOString()
+    });
     await simpleGit().clone(repoUrl, projectDir);
     console.log('Repository cloned successfully');
+    io.emit('progress', { 
+      type: 'success', 
+      message: '✅ Repository cloned successfully!',
+      timestamp: new Date().toISOString()
+    });
 
     // Analyze the repository
     console.log('Analyzing repository...');
+    io.emit('progress', { 
+      type: 'info', 
+      message: '🔍 Analyzing repository structure...',
+      timestamp: new Date().toISOString()
+    });
     const analysis = await analyzer.analyzeRepository(projectDir);
     console.log('Analysis completed:', analysis);
+    io.emit('progress', { 
+      type: 'success', 
+      message: `✅ Analysis completed! Found ${analysis.projectType} project`,
+      timestamp: new Date().toISOString()
+    });
     
     // Generate missing files
     console.log('Generating missing files...');
+    io.emit('progress', { 
+      type: 'info', 
+      message: '🔧 Generating missing Docker files...',
+      timestamp: new Date().toISOString()
+    });
     const generatedFiles = await generator.generateFiles(projectDir, analysis);
     console.log('Files generated:', Object.keys(generatedFiles));
     
     // Save generated files to temp directory
     console.log('Saving generated files to temp directory...');
+    io.emit('progress', { 
+      type: 'info', 
+      message: '💾 Saving generated files...',
+      timestamp: new Date().toISOString()
+    });
     if (generatedFiles.dockerfile) {
       await fs.writeFile(path.join(projectDir, 'Dockerfile'), generatedFiles.dockerfile);
       console.log('Dockerfile saved');
+      io.emit('progress', { 
+        type: 'success', 
+        message: '📄 Dockerfile generated and saved',
+        timestamp: new Date().toISOString()
+      });
     }
     if (generatedFiles.compose) {
       await fs.writeFile(path.join(projectDir, 'docker-compose.yml'), generatedFiles.compose);
       console.log('docker-compose.yml saved');
+      io.emit('progress', { 
+        type: 'success', 
+        message: '📄 docker-compose.yml generated and saved',
+        timestamp: new Date().toISOString()
+      });
     }
     if (generatedFiles.readme) {
       await fs.writeFile(path.join(projectDir, 'README.md'), generatedFiles.readme);
       console.log('README.md saved');
+      io.emit('progress', { 
+        type: 'success', 
+        message: '📄 README.md generated and saved',
+        timestamp: new Date().toISOString()
+      });
     }
     
     // Check for issues and best practices
     console.log('Checking for issues...');
+    io.emit('progress', { 
+      type: 'info', 
+      message: '🔍 Checking for issues and best practices...',
+      timestamp: new Date().toISOString()
+    });
     const issues = fileChecker.checkForIssues(projectDir, analysis);
     console.log('Issues found:', issues.length);
+    io.emit('progress', { 
+      type: 'info', 
+      message: `⚠️ Found ${issues.length} issues/recommendations`,
+      timestamp: new Date().toISOString()
+    });
     
     // Get file contents for display
     console.log('Reading file contents...');
+    io.emit('progress', { 
+      type: 'info', 
+      message: '📖 Reading file contents for display...',
+      timestamp: new Date().toISOString()
+    });
+    
     const fileContents = {
-      dockerfile: analysis.dockerfile.exists ? 
-        await fs.readFile(path.join(projectDir, 'Dockerfile'), 'utf8') : 
-        generatedFiles.dockerfile,
-      compose: analysis.compose.exists ? 
-        await fs.readFile(path.join(projectDir, 'docker-compose.yml'), 'utf8') : 
-        generatedFiles.compose,
-      readme: analysis.readme.exists ? 
-        await fs.readFile(path.join(projectDir, 'README.md'), 'utf8') : 
-        generatedFiles.readme
+      dockerfile: null,
+      compose: null,
+      readme: null
     };
+    
+    // Read existing files or use generated content
+    if (analysis.dockerfile.exists) {
+      try {
+        fileContents.dockerfile = await fs.readFile(path.join(projectDir, analysis.dockerfile.path), 'utf8');
+      } catch (error) {
+        console.error('Error reading Dockerfile:', error);
+        fileContents.dockerfile = generatedFiles.dockerfile || '';
+      }
+    } else {
+      fileContents.dockerfile = generatedFiles.dockerfile || '';
+    }
+    
+    if (analysis.compose.exists) {
+      try {
+        fileContents.compose = await fs.readFile(path.join(projectDir, analysis.compose.path), 'utf8');
+      } catch (error) {
+        console.error('Error reading docker-compose.yml:', error);
+        fileContents.compose = generatedFiles.compose || '';
+      }
+    } else {
+      fileContents.compose = generatedFiles.compose || '';
+    }
+    
+    if (analysis.readme.exists) {
+      try {
+        fileContents.readme = await fs.readFile(path.join(projectDir, analysis.readme.path), 'utf8');
+      } catch (error) {
+        console.error('Error reading README.md:', error);
+        fileContents.readme = generatedFiles.readme || '';
+      }
+    } else {
+      fileContents.readme = generatedFiles.readme || '';
+    }
 
     console.log('Sending response...');
+    io.emit('progress', { 
+      type: 'success', 
+      message: '🎉 Analysis completed! Preparing results...',
+      timestamp: new Date().toISOString()
+    });
     
     // Set proper headers
     res.setHeader('Content-Type', 'application/json');
@@ -260,10 +385,22 @@ app.post('/analyze', async (req, res) => {
     console.log('Response data prepared, sending...');
     res.status(200).json(responseData);
     console.log('Response sent successfully');
+    
+    io.emit('progress', { 
+      type: 'success', 
+      message: '✅ Results ready! You can now download the generated files.',
+      timestamp: new Date().toISOString()
+    });
 
   } catch (error) {
     console.error('Error analyzing repository:', error);
     console.error('Error stack:', error.stack);
+    
+    io.emit('progress', { 
+      type: 'error', 
+      message: `❌ Error: ${error.message}`,
+      timestamp: new Date().toISOString()
+    });
     
     // Set proper headers for error response
     res.setHeader('Content-Type', 'application/json');
@@ -279,7 +416,7 @@ app.post('/analyze', async (req, res) => {
 
 // Start the server with better error handling
 const startServer = (port) => {
-  const server = app.listen(port, () => {
+  const serverInstance = server.listen(port, () => {
     console.log(`✅ Server running on http://localhost:${port}`);
     console.log(`📁 Public directory: ${path.join(__dirname, 'public')}`);
     
@@ -308,7 +445,7 @@ const startServer = (port) => {
     }
   });
   
-  return server;
+  return serverInstance;
 };
 
 startServer(PORT);

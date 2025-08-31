@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Repository Analyzer</title>
     <link rel="stylesheet" href="/style.css">
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
@@ -23,17 +24,84 @@
             <button onclick="testAnalyze()" style="background-color: #17a2b8;">Test Analyze Route</button>
         </div>
 
+        <!-- Progress Chat Interface -->
+        <div id="progressChat" class="progress-chat" style="display: none;">
+            <div class="chat-header">
+                <h3>🔄 Analysis Progress</h3>
+                <button onclick="clearProgress()" class="clear-btn">Clear</button>
+            </div>
+            <div id="progressMessages" class="chat-messages"></div>
+        </div>
+
         <div id="result"></div>
     </div>
 
     <script>
         let currentAnalysisId = null;
+        let socket = null;
+
+        // Initialize Socket.IO connection
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                addProgressMessage('Connected to server', 'info');
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                addProgressMessage('Disconnected from server', 'error');
+            });
+            
+            socket.on('progress', (data) => {
+                addProgressMessage(data.message, data.type);
+            });
+        }
+
+        // Add progress message to chat
+        function addProgressMessage(message, type = 'info') {
+            const progressChat = document.getElementById('progressChat');
+            const progressMessages = document.getElementById('progressMessages');
+            
+            // Show progress chat if hidden
+            progressChat.style.display = 'block';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `progress-message ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <span class="message-text">${message}</span>
+                    <span class="message-time">${timestamp}</span>
+                </div>
+            `;
+            
+            progressMessages.appendChild(messageDiv);
+            progressMessages.scrollTop = progressMessages.scrollHeight;
+        }
+
+        // Clear progress messages
+        function clearProgress() {
+            const progressMessages = document.getElementById('progressMessages');
+            progressMessages.innerHTML = '';
+            document.getElementById('progressChat').style.display = 'none';
+        }
+
+        // Initialize socket when page loads
+        document.addEventListener('DOMContentLoaded', initializeSocket);
 
         document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const repoUrl = document.getElementById('repoUrl').value;
             const resultDiv = document.getElementById('result');
+            
+            // Clear previous results and show progress
+            resultDiv.innerHTML = '';
+            clearProgress();
+            addProgressMessage('🚀 Starting analysis...', 'info');
             
             // Show loading state
             resultDiv.innerHTML = `
@@ -56,8 +124,10 @@
                 
                 if (data.success) {
                     currentAnalysisId = data.analysisId;
+                    addProgressMessage('✅ Analysis completed successfully!', 'success');
                     displayResults(data);
                 } else {
+                    addProgressMessage(`❌ Error: ${data.message}`, 'error');
                     resultDiv.innerHTML = `
                         <div class="error">
                             <h3>Error</h3>
@@ -66,6 +136,7 @@
                     `;
                 }
             } catch (error) {
+                addProgressMessage(`❌ Failed to analyze repository: ${error.message}`, 'error');
                 resultDiv.innerHTML = `
                     <div class="error">
                         <h3>Error</h3>
