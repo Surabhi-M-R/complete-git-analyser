@@ -9,6 +9,7 @@ A web application that analyzes GitHub repositories for Docker and cloud deploym
 - **Issue Detection**: Identifies potential issues and security concerns
 - **Best Practices**: Provides recommendations for deployment and development
 - **File Generation**: Automatically generates missing configuration files
+- **AI Chat Assistant**: Interactive AI chatbot for Docker and deployment questions
 
 ## Prerequisites
 
@@ -24,6 +25,14 @@ A web application that analyzes GitHub repositories for Docker and cloud deploym
    npm install
    ```
 
+3. Set up environment variables:
+   - Copy `env.example` to `.env`
+   - Add your OpenAI API key to the `.env` file:
+     ```
+     OPENAI_API_KEY=your_openai_api_key_here
+     ```
+   - Get your API key from: https://platform.openai.com/api-keys
+
 ## Usage
 
 1. Start the server:
@@ -36,6 +45,22 @@ A web application that analyzes GitHub repositories for Docker and cloud deploym
 3. Enter a GitHub repository URL (e.g., `https://github.com/username/repository.git`)
 
 4. Click "Analyze Repository" to get a comprehensive analysis
+
+### AI Chat Assistant
+
+The application includes an AI chat assistant that can help you with:
+- Docker configuration questions
+- Deployment best practices
+- Repository analysis explanations
+- General development questions
+
+To use the chat:
+1. Scroll down to the "🤖 AI Assistant" section
+2. Type your question in the chat input
+3. Press Enter or click "Send"
+4. Get instant AI-powered responses
+
+**Note**: Make sure you have set up your OpenAI API key in the `.env` file for the chat feature to work.
 
 ## Troubleshooting
 
@@ -81,6 +106,8 @@ repo_analyser/
 - `GET /` - Main application page
 - `POST /analyze` - Analyze a repository
   - Body: `{ "repoUrl": "https://github.com/username/repo.git" }`
+- `POST /chat` - AI chat endpoint
+  - Body: `{ "message": "Your question here" }`
 
 ## Supported Project Types
 
@@ -121,6 +148,8 @@ npm run dev
 - **fs-extra**: Enhanced file system operations
 - **axios**: HTTP client
 - **highlight.js**: Code syntax highlighting
+- **openai**: OpenAI API client
+- **dotenv**: Environment variable management
 
 ## License
 

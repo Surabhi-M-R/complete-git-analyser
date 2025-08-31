@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const simpleGit = require('simple-git');
 const fs = require('fs-extra');
@@ -8,6 +11,7 @@ const fileChecker = require('./utils/fileChecker');
 const archiver = require('archiver');
 const http = require('http');
 const socketIo = require('socket.io');
+const OpenAI = require('openai');
 
 const app = express();
 const server = http.createServer(app);
@@ -19,6 +23,11 @@ const io = socketIo(server, {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Helper functions
 function getFileName(fileType) {
@@ -182,6 +191,43 @@ app.get('/download-all/:analysisId', async (req, res) => {
   } catch (error) {
     console.error('Zip download error:', error);
     res.status(500).json({ error: 'Zip download failed' });
+  }
+});
+
+// Chat endpoint for AI assistance
+app.post('/chat', async (req, res) => {
+  const { message } = req.body;
+  
+  if (!message) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Message is required' 
+    });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ 
+      success: false, 
+      message: 'OpenAI API key not configured' 
+    });
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: message }],
+    });
+
+    res.json({ 
+      success: true,
+      reply: response.choices[0].message.content 
+    });
+  } catch (err) {
+    console.error('OpenAI API error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
   }
 });
 

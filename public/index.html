@@ -9,16 +9,7 @@
 </head>
 <body>
     <div class="main-layout">
-        <!-- Left Side - Progress Chat -->
-        <div class="chat-sidebar">
-            <div class="chat-header">
-                <h3>🔄 Analysis Progress</h3>
-                <button onclick="clearProgress()" class="clear-btn">Clear</button>
-            </div>
-            <div id="progressMessages" class="chat-messages"></div>
-        </div>
-
-        <!-- Right Side - Main Content -->
+        <!-- Left Side - Main Content -->
         <div class="main-content">
             <div class="container">
                 <h1>Repository Analyzer</h1>
@@ -36,7 +27,29 @@
                     <button onclick="testAnalyze()" style="background-color: #17a2b8;">Test Analyze Route</button>
                 </div>
 
+                <!-- Progress Chat Section -->
+                <div class="progress-section">
+                    <h3>🔄 Analysis Progress</h3>
+                    <div class="progress-container">
+                        <div id="progressMessages" class="progress-messages"></div>
+                        <button onclick="clearProgress()" class="clear-btn">Clear Progress</button>
+                    </div>
+                </div>
+
                 <div id="result"></div>
+            </div>
+        </div>
+
+        <!-- Right Side - AI Chat -->
+        <div class="chat-sidebar">
+            <div class="chat-header">
+                <h3>🤖 AI Assistant</h3>
+                <button onclick="clearChat()" class="clear-btn">Clear Chat</button>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Ask me anything about Docker, deployment, or your repository..." class="chat-input">
+                <button onclick="sendChatMessage()" class="chat-send-btn">Send</button>
             </div>
         </div>
     </div>
@@ -87,6 +100,12 @@
         function clearProgress() {
             const progressMessages = document.getElementById('progressMessages');
             progressMessages.innerHTML = '';
+        }
+
+        // Clear chat messages
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
         }
 
         // Initialize socket when page loads
@@ -374,6 +393,129 @@
                 `;
             }
         }
+
+        // Chat functionality
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const messages = document.getElementById('chatMessages');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            addChatMessage('You', message, 'user');
+            input.value = '';
+
+            // Show loading indicator
+            const loadingId = addChatMessage('AI', 'Thinking...', 'bot', 'loading');
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+
+                // Remove loading message
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+
+                if (data.success) {
+                    addChatMessage('AI', data.reply, 'bot');
+                } else {
+                    addChatMessage('AI', `Error: ${data.message || data.error}`, 'bot', 'error');
+                }
+            } catch (error) {
+                // Remove loading message
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                addChatMessage('AI', `Error: ${error.message}`, 'bot', 'error');
+            }
+        }
+
+        function addChatMessage(sender, message, type, status = '') {
+            const messages = document.getElementById('chatMessages');
+            const messageId = 'msg-' + Date.now();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `chat-message ${type} ${status}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const senderClass = type === 'user' ? 'user' : '';
+            
+            // Format the message content for better display
+            let formattedMessage = message;
+            if (type === 'bot' && !status) {
+                // Convert markdown-like formatting to HTML
+                formattedMessage = formatMessage(message);
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-sender ${senderClass}">${sender}</span>
+                    <span class="message-time">${timestamp}</span>
+                </div>
+                <div class="message-content">${formattedMessage}</div>
+            `;
+            
+            messages.appendChild(messageDiv);
+            
+            // Smooth scroll to bottom
+            setTimeout(() => {
+                messages.scrollTo({
+                    top: messages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+            
+            return messageId;
+        }
+
+        function formatMessage(message) {
+            // Convert markdown-like formatting to HTML
+            return message
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                // Bold
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Italic
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Code blocks
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                // Inline code
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // Lists
+                .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>')
+                // Wrap lists in ul tags
+                .replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
+                // Line breaks
+                .replace(/\n/g, '<br>')
+                // Clean up multiple line breaks
+                .replace(/<br><br>/g, '</p><p>')
+                .replace(/^(.*)$/gim, '<p>$1</p>')
+                // Clean up empty paragraphs
+                .replace(/<p><\/p>/g, '')
+                .replace(/<p><br><\/p>/g, '');
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        });
     </script>
 </body>
 </html>
