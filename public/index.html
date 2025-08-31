@@ -18,6 +18,11 @@
             <button type="submit">Analyze Repository</button>
         </form>
 
+        <div style="margin: 20px 0;">
+            <button onclick="testConnection()" style="background-color: #6c757d; margin-right: 10px;">Test Connection</button>
+            <button onclick="testAnalyze()" style="background-color: #17a2b8;">Test Analyze Route</button>
+        </div>
+
         <div id="result"></div>
     </div>
 
@@ -249,6 +254,54 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            try {
+                const response = await fetch('/test');
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="analysis-section">
+                        <h3>Connection Test Result</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>Connection Test Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testAnalyze() {
+            const resultDiv = document.getElementById('result');
+            try {
+                const response = await fetch('/test-analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ test: true })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="analysis-section">
+                        <h3>Analyze Route Test Result</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>Analyze Route Test Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
         }
     </script>
 </body>

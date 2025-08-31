@@ -10,10 +10,42 @@ const archiver = require('archiver');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Helper functions
+function getFileName(fileType) {
+  const fileNames = {
+    'dockerfile': 'Dockerfile',
+    'compose': 'docker-compose.yml',
+    'readme': 'README.md'
+  };
+  return fileNames[fileType] || fileType;
+}
+
+function getContentType(fileType) {
+  const contentTypes = {
+    'dockerfile': 'text/plain',
+    'compose': 'application/x-yaml',
+    'readme': 'text/markdown'
+  };
+  return contentTypes[fileType] || 'text/plain';
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
+
+// Add CORS headers
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Favicon middleware to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {
@@ -39,11 +71,23 @@ app.get('/', (req, res) => {
 
 // Test route to verify server is working
 app.get('/test', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   res.json({
     message: 'Server is running',
     timestamp: new Date().toISOString(),
     port: PORT,
     nodeEnv: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Test analyze route with simple response
+app.post('/test-analyze', (req, res) => {
+  console.log('Test analyze route called');
+  res.setHeader('Content-Type', 'application/json');
+  res.json({
+    success: true,
+    message: 'Test response working',
+    testData: 'This is a test response'
   });
 });
 
@@ -103,29 +147,13 @@ app.get('/download-all/:analysisId', async (req, res) => {
   }
 });
 
-// Helper functions
-function getFileName(fileType) {
-  const fileNames = {
-    'dockerfile': 'Dockerfile',
-    'compose': 'docker-compose.yml',
-    'readme': 'README.md'
-  };
-  return fileNames[fileType] || fileType;
-}
-
-function getContentType(fileType) {
-  const contentTypes = {
-    'dockerfile': 'text/plain',
-    'compose': 'application/x-yaml',
-    'readme': 'text/markdown'
-  };
-  return contentTypes[fileType] || 'text/plain';
-}
-
 app.post('/analyze', async (req, res) => {
   const { repoUrl } = req.body;
   
+  console.log('Received analyze request for:', repoUrl);
+  
   if (!repoUrl) {
+    console.log('No repository URL provided');
     return res.status(400).json({ 
       success: false, 
       message: 'Repository URL is required' 
@@ -137,22 +165,31 @@ app.post('/analyze', async (req, res) => {
     const analysisId = Date.now();
     const projectDir = path.join(__dirname, 'temp', analysisId.toString());
     
+    console.log('Creating project directory:', projectDir);
     await fs.ensureDir(projectDir);
 
     // Clone the repository
+    console.log('Cloning repository:', repoUrl);
     await simpleGit().clone(repoUrl, projectDir);
     console.log('Repository cloned successfully');
 
     // Analyze the repository
+    console.log('Analyzing repository...');
     const analysis = await analyzer.analyzeRepository(projectDir);
+    console.log('Analysis completed:', analysis);
     
     // Generate missing files
+    console.log('Generating missing files...');
     const generatedFiles = await generator.generateFiles(projectDir, analysis);
+    console.log('Files generated:', Object.keys(generatedFiles));
     
     // Check for issues and best practices
+    console.log('Checking for issues...');
     const issues = fileChecker.checkForIssues(projectDir, analysis);
+    console.log('Issues found:', issues.length);
     
     // Get file contents for display
+    console.log('Reading file contents...');
     const fileContents = {
       dockerfile: analysis.dockerfile.exists ? 
         await fs.readFile(path.join(projectDir, 'Dockerfile'), 'utf8') : 
@@ -165,8 +202,14 @@ app.post('/analyze', async (req, res) => {
         generatedFiles.readme
     };
 
+    console.log('Sending response...');
+    
+    // Set proper headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    
     // Send response with analysis ID for downloads
-    res.json({
+    const responseData = {
       success: true,
       message: 'Analysis completed successfully',
       analysisId: analysisId.toString(),
@@ -178,10 +221,20 @@ app.post('/analyze', async (req, res) => {
         compose: !analysis.compose.exists,
         readme: !analysis.readme.exists
       }
-    });
+    };
+    
+    console.log('Response data prepared, sending...');
+    res.status(200).json(responseData);
+    console.log('Response sent successfully');
 
   } catch (error) {
     console.error('Error analyzing repository:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Set proper headers for error response
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache');
+    
     res.status(500).json({ 
       success: false, 
       message: 'Error analyzing repository',
