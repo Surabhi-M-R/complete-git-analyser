@@ -99,12 +99,16 @@ app.get('/download/:fileType/:analysisId', async (req, res) => {
     const tempDir = path.join(__dirname, 'temp', analysisId);
     const filePath = path.join(tempDir, getFileName(fileType));
     
+    console.log('Individual download request:', { fileType, analysisId, filePath });
+    
     if (await fs.pathExists(filePath)) {
       const fileName = getFileName(fileType);
+      console.log(`Sending file: ${fileName}`);
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
       res.setHeader('Content-Type', getContentType(fileType));
       res.sendFile(filePath);
     } else {
+      console.log(`File not found: ${filePath}`);
       res.status(404).json({ error: 'File not found' });
     }
   } catch (error) {
@@ -119,10 +123,17 @@ app.get('/download-all/:analysisId', async (req, res) => {
   
   try {
     const tempDir = path.join(__dirname, 'temp', analysisId);
+    console.log('Download request for analysis ID:', analysisId);
+    console.log('Temp directory:', tempDir);
     
     if (!await fs.pathExists(tempDir)) {
+      console.log('Temp directory does not exist');
       return res.status(404).json({ error: 'Analysis not found' });
     }
+    
+    // List all files in temp directory
+    const allFiles = await fs.readdir(tempDir);
+    console.log('Files in temp directory:', allFiles);
     
     const archive = archiver('zip', {
       zlib: { level: 9 } // Sets the compression level
@@ -133,14 +144,22 @@ app.get('/download-all/:analysisId', async (req, res) => {
     
     // Add files to zip
     const files = ['Dockerfile', 'docker-compose.yml', 'README.md'];
+    let filesAdded = 0;
+    
     for (const file of files) {
       const filePath = path.join(tempDir, file);
       if (await fs.pathExists(filePath)) {
+        console.log(`Adding file to zip: ${file}`);
         archive.file(filePath, { name: file });
+        filesAdded++;
+      } else {
+        console.log(`File not found: ${file}`);
       }
     }
     
+    console.log(`Total files added to zip: ${filesAdded}`);
     await archive.finalize();
+    console.log('Zip file created successfully');
   } catch (error) {
     console.error('Zip download error:', error);
     res.status(500).json({ error: 'Zip download failed' });
@@ -182,6 +201,21 @@ app.post('/analyze', async (req, res) => {
     console.log('Generating missing files...');
     const generatedFiles = await generator.generateFiles(projectDir, analysis);
     console.log('Files generated:', Object.keys(generatedFiles));
+    
+    // Save generated files to temp directory
+    console.log('Saving generated files to temp directory...');
+    if (generatedFiles.dockerfile) {
+      await fs.writeFile(path.join(projectDir, 'Dockerfile'), generatedFiles.dockerfile);
+      console.log('Dockerfile saved');
+    }
+    if (generatedFiles.compose) {
+      await fs.writeFile(path.join(projectDir, 'docker-compose.yml'), generatedFiles.compose);
+      console.log('docker-compose.yml saved');
+    }
+    if (generatedFiles.readme) {
+      await fs.writeFile(path.join(projectDir, 'README.md'), generatedFiles.readme);
+      console.log('README.md saved');
+    }
     
     // Check for issues and best practices
     console.log('Checking for issues...');
