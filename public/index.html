@@ -9,7 +9,16 @@
 </head>
 <body>
     <div class="main-layout">
-        <!-- Left Side - Main Content -->
+        <!-- Left Side - Analysis Progress -->
+        <div class="progress-sidebar">
+            <div class="progress-header">
+                <h3>🔄 Analysis Progress</h3>
+                <button onclick="clearProgress()" class="clear-btn">Clear</button>
+            </div>
+            <div id="progressMessages" class="progress-messages"></div>
+        </div>
+
+        <!-- Middle - Main Content -->
         <div class="main-content">
             <div class="container">
                 <h1>Repository Analyzer</h1>
@@ -25,15 +34,6 @@
                 <div style="margin: 20px 0;">
                     <button onclick="testConnection()" style="background-color: #6c757d; margin-right: 10px;">Test Connection</button>
                     <button onclick="testAnalyze()" style="background-color: #17a2b8;">Test Analyze Route</button>
-                </div>
-
-                <!-- Progress Chat Section -->
-                <div class="progress-section">
-                    <h3>🔄 Analysis Progress</h3>
-                    <div class="progress-container">
-                        <div id="progressMessages" class="progress-messages"></div>
-                        <button onclick="clearProgress()" class="clear-btn">Clear Progress</button>
-                    </div>
                 </div>
 
                 <div id="result"></div>
