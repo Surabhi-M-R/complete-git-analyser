@@ -8,6 +8,9 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+    <!-- Floating particles for hacker effect -->
+    <div class="floating-particles" id="particles"></div>
+    
     <div class="main-layout">
         <!-- Left Side - Analysis Progress -->
         <div class="progress-sidebar">
@@ -21,7 +24,7 @@
         <!-- Middle - Main Content -->
         <div class="main-content">
             <div class="container">
-                <h1>Repository Analyzer</h1>
+                <h1 data-text="Repository Analyzer" class="neon-glow">Repository Analyzer</h1>
                 
                 <form id="analyzeForm">
                     <div class="form-group">
@@ -55,6 +58,27 @@
     </div>
 
     <script>
+        // Create floating particles effect
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Initialize particles when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            initializeSocket();
+        });
+        
         let currentAnalysisId = null;
         let socket = null;
 
@@ -107,9 +131,6 @@
             const chatMessages = document.getElementById('chatMessages');
             chatMessages.innerHTML = '';
         }
-
-        // Initialize socket when page loads
-        document.addEventListener('DOMContentLoaded', initializeSocket);
 
         document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
