@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'public')));
 app.use(express.urlencoded({ extended: true }));
 
 // Add CORS headers
@@ -90,7 +90,7 @@ app.use((err, req, res, next) => {
 app.get('/', (req, res) => {
   try {
     console.log('Serving index.html from public directory');
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'public', 'index.html'));
   } catch (error) {
     console.error('Error serving index page:', error);
     res.status(500).send('Error serving page: ' + error.message);

@@ -1,0 +1,34 @@
+{
+  "name": "repo-analyzer-backend",
+  "version": "1.0.0",
+  "description": "Backend API for GitHub Repository Analyzer",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "archiver": "^6.0.1",
+    "axios": "^1.4.0",
+    "dotenv": "^17.2.1",
+    "express": "^4.18.2",
+    "fs-extra": "^11.3.1",
+    "highlight.js": "^11.8.0",
+    "openai": "^5.16.0",
+    "simple-git": "^3.17.0",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "docker",
+    "github",
+    "analysis",
+    "deployment",
+    "api"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
