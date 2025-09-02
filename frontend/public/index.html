@@ -3,11 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repository Analyzer</title>
+    <title>Repository Analyzer Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/side-nav.css?v=2">
+    <link rel="stylesheet" href="/footer.css">
     <style>
-        /* Hacker-style glassmorphism design - IMPROVED */
+        /* Modern Hacker-style glassmorphism design */
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary: #00ff7f;
+            --primary-dark: #00cc66;
+            --primary-light: rgba(0, 255, 127, 0.1);
+            --secondary: #0099ff;
+            --secondary-light: rgba(0, 153, 255, 0.1);
+            --accent: #a777e3;
+            --accent-light: rgba(167, 119, 227, 0.1);
+            --danger: #ff4757;
+            --danger-light: rgba(255, 71, 87, 0.1);
+            --dark: #0a0a0a;
+            --darker: #050505;
+            --light: #f5f8ff;
+            --glass-light: rgba(255, 255, 255, 0.05);
+            --glass-dark: rgba(0, 0, 0, 0.3);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         * {
             margin: 0;
@@ -17,14 +38,27 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #0a0a0a 100%);
+            background: linear-gradient(135deg, var(--darker) 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, var(--darker) 100%);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
-            color: #ffffff;
+            color: var(--light);
             overflow-x: hidden;
             min-height: 100vh;
             position: relative;
-            padding-top: 70px; /* Increased space for enhanced progress header */
+            padding-top: 80px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Matrix Rain Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
         }
 
         /* Enhanced Progress Header Bar */
@@ -33,15 +67,17 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 70px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(0, 255, 127, 0.4);
+            height: 80px;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--primary);
             z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 5px 30px rgba(0, 255, 127, 0.2);
+            padding: 0 20px;
         }
 
         .progress-container {
@@ -50,19 +86,44 @@
             justify-content: space-between;
             max-width: 1200px;
             width: 100%;
-            padding: 0 25px;
         }
 
         .progress-info {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex: 1;
         }
 
         .progress-icon {
-            font-size: 20px;
-            color: #00ff5f;
+            font-size: 24px;
+            color: var(--primary);
             animation: pulse 2s infinite;
+        }
+
+        .progress-text-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .progress-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.8);
+            letter-spacing: 0.5px;
+        }
+
+        .progress-text.info { color: var(--primary); }
+        .progress-text.success { color: var(--primary); text-shadow: 0 0 15px rgba(0, 255, 127, 1); }
+        .progress-text.error { color: var(--danger); text-shadow: 0 0 10px rgba(255, 71, 87, 0.8); }
+
+        .progress-details {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: rgba(0, 255, 127, 0.8);
+            margin-top: 4px;
         }
 
         .progress-bar-container {
@@ -74,10 +135,10 @@
         .progress-bar {
             position: relative;
             width: 100%;
-            height: 20px;
+            height: 24px;
             background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(0, 255, 127, 0.5);
-            border-radius: 10px;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
             overflow: hidden;
             box-shadow: 
                 0 0 20px rgba(0, 255, 127, 0.3),
@@ -98,43 +159,6 @@
             box-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
         }
 
-        .progress-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
-            font-weight: 600;
-            color: #00ff5f;
-            text-shadow: 0 0 10px rgba(0, 255, 127, 0.8);
-            z-index: 2;
-            white-space: nowrap;
-            letter-spacing: 1px;
-        }
-
-        .progress-text.info {
-            color: #00ff5f;
-            text-shadow: 0 0 10px rgba(0, 255, 127, 0.8);
-        }
-
-        .progress-text.success {
-            color: #00ff5f;
-            text-shadow: 0 0 15px rgba(0, 255, 127, 1);
-        }
-
-        .progress-text.error {
-            color: #ff4757;
-            text-shadow: 0 0 10px rgba(255, 71, 87, 0.8);
-        }
-
-        .progress-details {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            color: rgba(0, 255, 127, 0.8);
-            margin-top: 5px;
-        }
-
         /* Animated background gradient */
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -147,58 +171,100 @@
             50% { opacity: 0.7; }
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Floating particles effect */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 0 0 6px var(--primary);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10%, 90% {
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(-100vh) rotate(180deg);
+            }
+        }
+
         /* Main Layout */
         .main-layout {
             display: flex;
             flex-direction: column;
-            min-height: calc(100vh - 70px);
+            flex: 1;
             position: relative;
             z-index: 1;
-            margin-top: 70px;
+            margin-top: 80px;
+            margin-left: 80px;
+            padding: 20px;
+            gap: 20px;
+            transition: margin-left 0.3s ease;
         }
 
         /* Main Content Area with improved glassmorphism */
         .main-content {
             flex: 1;
-            margin: 20px;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--glass-dark);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
             padding: 30px;
             box-shadow: 
                 0 8px 32px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
             position: relative;
             z-index: 2;
-            min-height: calc(100vh - 110px);
         }
 
         /* Container styling */
         .container {
-            background: rgba(0, 0, 0, 0.15);
+            background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             padding: 40px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 127, 0.15);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--primary-light);
             box-shadow: 
                 0 8px 32px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         h1 {
-            color: #00ff7f;
+            color: var(--primary);
             text-align: center;
             margin-bottom: 40px;
-            font-size: 2.5rem;
-            font-weight: 700;
+            font-size: 2.8rem;
+            font-weight: 800;
             text-shadow: 
                 0 0 10px rgba(0, 255, 127, 0.5),
                 0 0 20px rgba(0, 255, 127, 0.3),
                 0 0 40px rgba(0, 255, 127, 0.1);
             font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 1px;
         }
 
         .form-group {
@@ -209,32 +275,32 @@
             display: block;
             margin-bottom: 10px;
             font-weight: 600;
-            color: #00ff7f;
+            color: var(--primary);
             font-size: 16px;
             text-shadow: 0 0 5px rgba(0, 255, 127, 0.3);
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 15px 20px;
-            border: 1px solid rgba(0, 255, 127, 0.25);
+            padding: 16px 20px;
+            border: 1px solid var(--primary-light);
             border-radius: 12px;
             font-size: 16px;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            color: #ffffff;
-            transition: all 0.3s ease;
+            color: var(--light);
+            transition: var(--transition);
             font-family: 'JetBrains Mono', monospace;
         }
 
         input[type="text"]:focus {
             outline: none;
-            border-color: #00ff7f;
+            border-color: var(--primary);
             box-shadow: 
                 0 0 20px rgba(0, 255, 127, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
         }
 
         input[type="text"]::placeholder {
@@ -242,16 +308,16 @@
         }
 
         button {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(0, 255, 127, 0.1));
-            color: #00ff7f;
-            padding: 15px 30px;
-            border: 1px solid rgba(0, 255, 127, 0.3);
+            background: linear-gradient(135deg, var(--primary-light), rgba(0, 255, 127, 0.05));
+            color: var(--primary);
+            padding: 16px 30px;
+            border: 1px solid var(--primary);
             border-radius: 12px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
             width: 100%;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             font-family: 'JetBrains Mono', monospace;
@@ -267,7 +333,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 127, 0.15), transparent);
+            background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
             transition: left 0.5s ease;
         }
 
@@ -276,7 +342,7 @@
         }
 
         button:hover {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.25), rgba(0, 255, 127, 0.15));
+            background: linear-gradient(135deg, rgba(0, 255, 127, 0.2), rgba(0, 255, 127, 0.1));
             box-shadow: 
                 0 0 25px rgba(0, 255, 127, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -287,14 +353,34 @@
             transform: translateY(0);
         }
 
-        /* Chat Section with improved glassmorphism */
+        /* Test button styling */
+        .test-btn {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 12px 24px;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: var(--transition);
+            width: auto;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .test-btn:hover {
+            background-color: rgba(0, 255, 127, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
+        }
+
+        /* AI Chat Section with improved glassmorphism */
         .chat-section {
-            margin: 20px;
-            background: rgba(0, 0, 0, 0.25);
+            background: var(--glass-dark);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 255, 127, 0.15);
-            border-radius: 20px;
+            border: 1px solid var(--primary-light);
+            border-radius: var(--border-radius);
             display: flex;
             flex-direction: column;
             box-shadow: 
@@ -307,13 +393,13 @@
 
         /* Chat Header */
         .chat-header {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            color: #00ff7f;
+            color: var(--primary);
             padding: 20px;
-            border-bottom: 1px solid rgba(0, 255, 127, 0.15);
-            border-radius: 20px 20px 0 0;
+            border-bottom: 1px solid var(--primary-light);
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
             flex-shrink: 0;
             display: flex;
             justify-content: space-between;
@@ -332,10 +418,33 @@
         }
 
         .chat-header h3 i {
-            color: #00ff7f;
+            color: var(--primary);
             animation: pulse 2s infinite;
         }
 
+        .clear-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            font-family: 'JetBrains Mono', monospace;
+            text-shadow: 0 0 5px currentColor;
+        }
+
+        .clear-btn:hover {
+            background: rgba(0, 255, 127, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Chat Messages */
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -352,6 +461,7 @@
             display: flex;
             flex-direction: column;
             max-width: 80%;
+            animation: fadeIn 0.3s ease;
         }
 
         .message-container.user {
@@ -378,12 +488,12 @@
         }
 
         .message-sender.user {
-            color: #0099ff;
+            color: var(--secondary);
             text-shadow: 0 0 5px rgba(0, 153, 255, 0.5);
         }
 
         .message-sender.bot {
-            color: #00ff7f;
+            color: var(--primary);
             text-shadow: 0 0 5px rgba(0, 255, 127, 0.5);
         }
 
@@ -405,16 +515,16 @@
         }
 
         .message-container.user .message-content {
-            background: linear-gradient(135deg, rgba(0, 153, 255, 0.2), rgba(0, 153, 255, 0.1));
-            border: 1px solid rgba(0, 153, 255, 0.3);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--secondary-light), rgba(0, 153, 255, 0.05));
+            border: 1px solid var(--secondary);
+            color: var(--light);
             border-bottom-right-radius: 4px;
         }
 
         .message-container.bot .message-content {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(0, 255, 127, 0.1));
-            border: 1px solid rgba(0, 255, 127, 0.3);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--primary-light), rgba(0, 255, 127, 0.05));
+            border: 1px solid var(--primary);
+            color: var(--light);
             border-bottom-left-radius: 4px;
         }
 
@@ -425,19 +535,19 @@
         }
 
         .message-container.error .message-content {
-            background: rgba(255, 0, 127, 0.1);
-            border: 1px solid rgba(255, 0, 127, 0.3);
+            background: var(--danger-light);
+            border: 1px solid var(--danger);
         }
 
-        /* Chat Input */
+        /* Chat Input Container */
         .chat-input-container {
             display: flex;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(0, 255, 127, 0.15);
-            border-radius: 0 0 20px 20px;
+            border-top: 1px solid var(--primary-light);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
             gap: 15px;
             align-items: center;
         }
@@ -445,14 +555,14 @@
         .chat-input {
             flex: 1;
             padding: 15px 20px;
-            border: 1px solid rgba(0, 255, 127, 0.25);
+            border: 1px solid var(--primary);
             border-radius: 10px;
             font-size: 14px;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            color: #ffffff;
-            transition: all 0.3s ease;
+            color: var(--light);
+            transition: var(--transition);
             font-family: 'Inter', sans-serif;
             resize: none;
             min-height: 45px;
@@ -461,9 +571,9 @@
 
         .chat-input:focus {
             outline: none;
-            border-color: #00ff7f;
+            border-color: var(--primary);
             box-shadow: 0 0 15px rgba(0, 255, 127, 0.25);
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
         }
 
         .chat-input::placeholder {
@@ -471,16 +581,16 @@
         }
 
         .chat-send-btn {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.25), rgba(0, 255, 127, 0.15));
-            color: #00ff7f;
-            border: 1px solid rgba(0, 255, 127, 0.3);
-            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--primary-light), rgba(0, 255, 127, 0.1));
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 15px 25px;
             border-radius: 10px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
-            transition: all 0.3s ease;
-            min-width: 80px;
+            transition: var(--transition);
+            min-width: 100px;
             height: 45px;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -489,10 +599,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
         }
 
         .chat-send-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.35), rgba(0, 255, 127, 0.25));
+            background: linear-gradient(135deg, rgba(0, 255, 127, 0.2), rgba(0, 255, 127, 0.15));
             box-shadow: 0 0 20px rgba(0, 255, 127, 0.3);
             transform: translateY(-2px);
         }
@@ -501,11 +612,11 @@
         .analysis-section {
             margin-bottom: 30px;
             padding: 25px;
-            border-radius: 15px;
-            background: rgba(0, 0, 0, 0.15);
+            border-radius: var(--border-radius);
+            background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 255, 127, 0.15);
+            border: 1px solid var(--primary-light);
             box-shadow: 
                 0 8px 32px rgba(0, 0, 0, 0.15),
                 inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -513,8 +624,8 @@
 
         .analysis-section h3 {
             margin-top: 0;
-            color: #00ff7f;
-            border-bottom: 1px solid rgba(0, 255, 127, 0.25);
+            color: var(--primary);
+            border-bottom: 1px solid var(--primary);
             padding-bottom: 15px;
             margin-bottom: 20px;
             font-family: 'JetBrains Mono', monospace;
@@ -524,20 +635,20 @@
         .download-section {
             margin-bottom: 30px;
             padding: 25px;
-            border-radius: 15px;
-            background: rgba(0, 255, 127, 0.03);
+            border-radius: var(--border-radius);
+            background: rgba(0, 255, 127, 0.05);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 255, 127, 0.25);
+            border: 1px solid var(--primary);
             box-shadow: 
-                0 8px 32px rgba(0, 255, 127, 0.08),
+                0 8px 32px rgba(0, 255, 127, 0.1),
                 inset 0 1px 0 rgba(0, 255, 127, 0.05);
         }
 
         .download-section h3 {
             margin-top: 0;
-            color: #00ff7f;
-            border-bottom: 1px solid rgba(0, 255, 127, 0.3);
+            color: var(--primary);
+            border-bottom: 1px solid var(--primary);
             padding-bottom: 15px;
             margin-bottom: 20px;
             font-family: 'JetBrains Mono', monospace;
@@ -551,15 +662,15 @@
         }
 
         .download-btn {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(0, 255, 127, 0.08));
-            color: #00ff7f;
+            background: linear-gradient(135deg, var(--primary-light), rgba(0, 255, 127, 0.05));
+            color: var(--primary);
             padding: 12px 24px;
-            border: 1px solid rgba(0, 255, 127, 0.3);
+            border: 1px solid var(--primary);
             border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             width: auto;
             display: inline-flex;
             align-items: center;
@@ -579,7 +690,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 127, 0.15), transparent);
+            background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
             transition: left 0.5s ease;
         }
 
@@ -588,46 +699,46 @@
         }
 
         .download-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.25), rgba(0, 255, 127, 0.15));
+            background: linear-gradient(135deg, rgba(0, 255, 127, 0.2), rgba(0, 255, 127, 0.1));
             box-shadow: 0 0 25px rgba(0, 255, 127, 0.3);
             transform: translateY(-2px);
         }
 
         .download-all-btn {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.25), rgba(0, 255, 127, 0.15));
+            background: linear-gradient(135deg, rgba(0, 255, 127, 0.2), rgba(0, 255, 127, 0.1));
             font-size: 16px;
             padding: 15px 30px;
             box-shadow: 0 0 20px rgba(0, 255, 127, 0.15);
         }
 
         .download-all-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.35), rgba(0, 255, 127, 0.25));
+            background: linear-gradient(135deg, rgba(0, 255, 127, 0.3), rgba(0, 255, 127, 0.2));
             box-shadow: 0 0 30px rgba(0, 255, 127, 0.4);
         }
 
         /* File sections */
         .file-section {
             margin-bottom: 25px;
-            border: 1px solid rgba(0, 255, 127, 0.15);
-            border-radius: 12px;
+            border: 1px solid var(--primary-light);
+            border-radius: var(--border-radius);
             overflow: hidden;
-            background: rgba(0, 0, 0, 0.15);
+            background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
 
         .file-header {
-            background: rgba(0, 255, 127, 0.08);
+            background: var(--primary-light);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            color: #00ff7f;
+            color: var(--primary);
             padding: 15px 20px;
             font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 255, 127, 0.15);
+            border-bottom: 1px solid var(--primary-light);
             font-family: 'JetBrains Mono', monospace;
             text-shadow: 0 0 5px currentColor;
         }
@@ -639,20 +750,20 @@
         }
 
         .file-status {
-            background: rgba(0, 255, 127, 0.15);
+            background: rgba(0, 255, 127, 0.2);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 500;
-            border: 1px solid rgba(0, 255, 127, 0.25);
+            border: 1px solid var(--primary);
             text-shadow: 0 0 5px currentColor;
         }
 
         .file-content {
             padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             overflow-x: auto;
         }
 
@@ -675,29 +786,30 @@
         .issue-item {
             padding: 20px;
             margin-bottom: 15px;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             border: 1px solid;
-            background: rgba(0, 0, 0, 0.15);
+            background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 0.5s ease;
         }
 
         .issue-warning {
-            background: rgba(255, 255, 0, 0.08);
-            border-color: rgba(255, 255, 0, 0.25);
+            background: rgba(255, 255, 0, 0.1);
+            border-color: rgba(255, 255, 0, 0.3);
             color: #ffff00;
         }
 
         .issue-critical {
-            background: rgba(255, 0, 127, 0.08);
-            border-color: rgba(255, 0, 127, 0.25);
+            background: var(--danger-light);
+            border-color: var(--danger);
             color: #ff007f;
         }
 
         .issue-suggestion {
-            background: rgba(0, 255, 255, 0.08);
-            border-color: rgba(0, 255, 255, 0.25);
+            background: rgba(0, 255, 255, 0.1);
+            border-color: rgba(0, 255, 255, 0.3);
             color: #00ffff;
         }
 
@@ -725,21 +837,21 @@
         }
 
         .severity-high {
-            background: rgba(255, 0, 127, 0.15);
-            color: #ff007f;
-            border: 1px solid rgba(255, 0, 127, 0.3);
+            background: rgba(255, 0, 127, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
         }
 
         .severity-medium {
-            background: rgba(255, 255, 0, 0.15);
+            background: rgba(255, 255, 0, 0.2);
             color: #ffff00;
-            border: 1px solid rgba(255, 255, 0, 0.3);
+            border: 1px solid rgba(255, 255, 0, 0.4);
         }
 
         .severity-low {
-            background: rgba(0, 255, 127, 0.15);
-            color: #00ff7f;
-            border: 1px solid rgba(0, 255, 127, 0.3);
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary);
         }
 
         /* Summary cards */
@@ -752,16 +864,16 @@
 
         .summary-card {
             padding: 25px;
-            border-radius: 15px;
-            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--border-radius);
+            background: rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(0, 255, 127, 0.15);
+            border: 1px solid var(--primary-light);
             text-align: center;
             box-shadow: 
                 0 8px 32px rgba(0, 0, 0, 0.15),
                 inset 0 1px 0 rgba(255, 255, 255, 0.03);
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .summary-card:hover {
@@ -774,7 +886,7 @@
 
         .summary-card h3 {
             margin-top: 0;
-            color: #00ff7f;
+            color: var(--primary);
             font-family: 'JetBrains Mono', monospace;
             text-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
         }
@@ -783,7 +895,7 @@
             font-size: 28px;
             font-weight: 700;
             margin: 15px 0;
-            color: #ffffff;
+            color: var(--light);
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
             font-family: 'JetBrains Mono', monospace;
         }
@@ -795,15 +907,15 @@
         }
 
         .generated-badge {
-            background: linear-gradient(135deg, rgba(0, 255, 127, 0.25), rgba(0, 255, 127, 0.15));
-            color: #00ff7f;
+            background: linear-gradient(135deg, var(--primary-light), rgba(0, 255, 127, 0.1));
+            color: var(--primary);
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
             margin-top: 10px;
             display: inline-block;
-            border: 1px solid rgba(0, 255, 127, 0.3);
+            border: 1px solid var(--primary);
             font-family: 'JetBrains Mono', monospace;
             text-shadow: 0 0 5px currentColor;
         }
@@ -812,12 +924,12 @@
         .loading {
             text-align: center;
             padding: 60px;
-            color: #00ff7f;
+            color: var(--primary);
         }
 
         .loading-spinner {
-            border: 4px solid rgba(0, 255, 127, 0.15);
-            border-top: 4px solid #00ff7f;
+            border: 4px solid var(--primary-light);
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -839,81 +951,49 @@
 
         /* Error styling */
         .error {
-            background: rgba(255, 0, 127, 0.08);
+            background: var(--danger-light);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 0, 127, 0.25);
-            color: #ff007f;
+            border: 1px solid var(--danger);
+            color: var(--danger);
             padding: 20px;
-            border-radius: 12px;
+            border-radius: var(--border-radius);
             margin-bottom: 20px;
             box-shadow: 
-                0 8px 32px rgba(255, 0, 127, 0.08),
+                0 8px 32px rgba(255, 0, 127, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.03);
         }
 
         .error h3 {
             margin-top: 0;
-            color: #ff007f;
+            color: var(--danger);
             font-family: 'JetBrains Mono', monospace;
             text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
         }
 
-        /* Clear button */
-        .clear-btn {
-            background: rgba(0, 255, 127, 0.08);
-            color: #00ff7f;
-            border: 1px solid rgba(0, 255, 127, 0.25);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            font-family: 'JetBrains Mono', monospace;
-            text-shadow: 0 0 5px currentColor;
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar,
+        .file-content::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .clear-btn:hover {
-            background: rgba(0, 255, 127, 0.15);
-            box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
-            transform: translateY(-2px);
+        .chat-messages::-webkit-scrollbar-track,
+        .file-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
         }
 
-        /* Floating particles effect */
-        .floating-particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
+        .chat-messages::-webkit-scrollbar-thumb,
+        .file-content::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 255, 127, 0.2);
         }
 
-        .particle {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: #00ff7f;
-            border-radius: 50%;
-            animation: float 6s ease-in-out infinite;
-            box-shadow: 0 0 6px #00ff7f;
-        }
-
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 0;
-            }
-            10%, 90% {
-                opacity: 1;
-            }
-            50% {
-                transform: translateY(-100vh) rotate(180deg);
-            }
+        .chat-messages::-webkit-scrollbar-thumb:hover,
+        .file-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 127, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.4);
         }
 
         /* Responsive design */
@@ -929,21 +1009,24 @@
 
         @media (max-width: 768px) {
             .progress-header-bar {
-                height: 60px;
+                height: 70px;
+                padding: 0 15px;
             }
             
             .main-layout {
-                margin-top: 60px;
+                margin-top: 70px;
+                margin-left: 0;
+                padding: 15px;
             }
             
             body {
-                padding-top: 60px;
+                padding-top: 70px;
             }
             
             .progress-container {
                 flex-direction: column;
                 align-items: flex-start;
-                padding: 10px 15px;
+                gap: 10px;
             }
             
             .progress-info {
@@ -956,15 +1039,15 @@
             }
             
             .main-content, .chat-section {
-                margin: 10px;
-            }
-            
-            .container {
                 padding: 20px;
             }
             
+            .container {
+                padding: 25px;
+            }
+            
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
                 margin-bottom: 30px;
             }
             
@@ -982,6 +1065,15 @@
             
             .message-container {
                 max-width: 90%;
+            }
+            
+            .chat-input-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .chat-input, .chat-send-btn {
+                width: 100%;
             }
         }
 
@@ -1008,21 +1100,24 @@
             .message-container {
                 max-width: 95%;
             }
-        }
-
-        /* Matrix Rain Background */
-        #matrix-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            pointer-events: none;
+            
+            .main-content, .chat-section {
+                padding: 15px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
 <body>
+
+
     <!-- Matrix Rain Background -->
     <canvas id="matrix-canvas"></canvas>
     
@@ -1036,7 +1131,7 @@
                 <div class="progress-icon">
                     <i class="fas fa-code"></i>
                 </div>
-                <div>
+                <div class="progress-text-container">
                     <div class="progress-text" id="currentProgress">Ready</div>
                     <div class="progress-details" id="progressDetails">System initialized</div>
                 </div>
@@ -1053,20 +1148,21 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="container">
-                <h1 data-text="Repository Analyzer" class="neon-glow">Repository Analyzer</h1>
+                <h1 data-text="Repository Analyzer Pro" class="neon-glow">Repository Analyzer Pro</h1>
                 
                 <form id="analyzeForm">
                     <div class="form-group">
-                        <label for="repoUrl">Repository URL:</label>
+                        <label for="repoUrl"><i class="fas fa-link"></i> Repository URL:</label>
                         <input type="text" id="repoUrl" name="repoUrl" placeholder="https://github.com/username/repository" required>
                     </div>
-                    <button type="submit">Analyze Repository</button>
+                    <button type="submit"><i class="fas fa-search"></i> Analyze Repository</button>
                 </form>
                 
-                <!-- Temporary test buttons -->
-                <div style="margin: 20px 0;">
-                    <button onclick="testProgressBar()" style="background-color: rgba(0, 255, 127, 0.15); color: #00ff7f; padding: 10px 20px; border: 1px solid rgba(0, 255, 127, 0.3); border-radius: 5px; cursor: pointer; margin-right: 10px;">Test Progress Bar</button>
-                    <button onclick="testChat()" style="background-color: rgba(23, 162, 184, 0.15); color: #17a2b8; padding: 10px 20px; border: 1px solid rgba(23, 162, 184, 0.3); border-radius: 5px; cursor: pointer;">Test Chat</button>
+                <!-- Test progress bar button -->
+                <div style="text-align: center; margin: 20px 0;">
+                    <button onclick="testProgressBar()" class="test-btn">
+                        <i class="fas fa-vial"></i> Test Progress Bar
+                    </button>
                 </div>
 
                 <div id="result"></div>
@@ -1077,7 +1173,7 @@
         <div class="chat-section">
             <div class="chat-header">
                 <h3><i class="fas fa-robot"></i> AI Assistant</h3>
-                <button onclick="clearChat()" class="clear-btn">Clear Chat</button>
+                <button onclick="clearChat()" class="clear-btn"><i class="fas fa-trash"></i> Clear Chat</button>
             </div>
             <div id="chatMessages" class="chat-messages">
                 <!-- Preloaded welcome message -->
@@ -1096,7 +1192,7 @@
             <div class="chat-input-container">
                 <input type="text" id="chatInput" placeholder="Ask me anything about Docker, deployment, or your repository..." class="chat-input">
                 <button onclick="sendChatMessage()" class="chat-send-btn">
-                    <i class="fas fa-paper-plane"></i>
+                    <i class="fas fa-paper-plane"></i> Send
                 </button>
             </div>
         </div>
@@ -1176,7 +1272,6 @@
         function initializeSocket() {
             console.log('Initializing Socket.IO connection to: http://localhost:3000');
             // Simulating socket connection for demo purposes
-            // In a real implementation, you would connect to your server
             setTimeout(() => {
                 addProgressMessage('Connected to server', 'info');
             }, 1000);
@@ -1188,10 +1283,7 @@
             const progressDetails = document.getElementById('progressDetails');
             const progressFill = document.getElementById('progressFill');
             
-            console.log('Progress update:', { message, type, progress });
-            
             if (currentProgress) {
-                // Update the current progress display
                 currentProgress.textContent = message;
                 currentProgress.className = `progress-text ${type}`;
             }
@@ -1201,7 +1293,6 @@
             }
             
             if (progressFill) {
-                // Update progress bar fill
                 progressFill.style.width = `${progress}%`;
             }
             
@@ -1235,20 +1326,10 @@
 
         // Test progress bar function
         function testProgressBar() {
-            console.log('Testing progress bar...');
             addProgressMessage('Testing...', 'info', 25);
             setTimeout(() => addProgressMessage('Halfway...', 'info', 50), 1000);
             setTimeout(() => addProgressMessage('Almost done...', 'info', 75), 2000);
             setTimeout(() => addProgressMessage('Complete!', 'success', 100), 3000);
-        }
-
-        // Test chat function
-        function testChat() {
-            console.log('Testing chat functionality...');
-            addChatMessage('You', 'Hello, can you help me?', 'user');
-            setTimeout(() => {
-                sendChatMessage();
-            }, 1000);
         }
 
         // Clear chat messages
@@ -1530,42 +1611,30 @@
             const loadingId = addChatMessage('AI Assistant', 'Thinking...', 'bot', 'loading');
 
             try {
-                console.log('Sending chat message to backend:', message);
-                
-                const response = await fetch('http://localhost:3000/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message })
-                });
-                
-                console.log('Chat response status:', response.status);
-                console.log('Chat response headers:', response.headers);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('Chat response data:', data);
-                
-                // Remove loading message
-                const loadingElement = document.getElementById(loadingId);
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
-                
-                if (data && data.success) {
-                    console.log('Adding AI response to chat:', data.reply);
-                    addChatMessage('AI Assistant', data.reply, 'bot');
-                } else {
-                    console.error('API returned error:', data);
-                    addChatMessage('AI Assistant', `Error: ${data?.message || data?.error || 'Unknown error'}`, 'bot', 'error');
-                }
+                // Simulate API call for demo
+                setTimeout(() => {
+                    // Remove loading message
+                    const loadingElement = document.getElementById(loadingId);
+                    if (loadingElement) {
+                        loadingElement.remove();
+                    }
+
+                    // Add response based on message content
+                    let response = "I can help you with Docker, deployment, and repository analysis. What would you like to know?";
+                    
+                    if (message.toLowerCase().includes('docker')) {
+                        response = "Docker is a platform that enables developers to build, ship, and run applications in containers. It provides isolation and consistency across environments. You can use Docker to containerize your application and its dependencies, making deployment much easier.";
+                    } else if (message.toLowerCase().includes('deploy')) {
+                        response = "For deployment, you can use Docker containers, which provide consistent environments from development to production. You might also consider using orchestration tools like Kubernetes for managing containers at scale. Would you like me to generate deployment configuration files for your project?";
+                    } else if (message.toLowerCase().includes('compose')) {
+                        response = "Docker Compose is a tool for defining and running multi-container Docker applications. You use a YAML file to configure your application's services, then run a single command to create and start all the services. I can help you create or optimize a docker-compose.yml file for your project.";
+                    } else if (message.toLowerCase().includes('help') || message.toLowerCase().includes('what can you do')) {
+                        response = "I can help you with:\n- Analyzing GitHub repositories\n- Docker and containerization questions\n- Deployment strategies\n- Generating Dockerfiles\n- Creating docker-compose.yml files\n- Writing documentation\n- Identifying issues in your project setup\n\nWhat would you like assistance with?";
+                    }
+                    
+                    addChatMessage('AI Assistant', response, 'bot');
+                }, 1500);
             } catch (error) {
-                console.error('Chat API error:', error);
-                
                 // Remove loading message
                 const loadingElement = document.getElementById(loadingId);
                 if (loadingElement) {
@@ -1576,9 +1645,7 @@
         }
 
         function addChatMessage(sender, message, type, status = '') {
-            console.log('addChatMessage called:', { sender, message, type, status });
             const messages = document.getElementById('chatMessages');
-            console.log('Chat messages container:', messages);
             const messageId = 'msg-' + Date.now();
             
             const messageDiv = document.createElement('div');
@@ -1599,7 +1666,6 @@
             `;
             
             messages.appendChild(messageDiv);
-            console.log('Message added to DOM:', messageDiv);
             
             // Smooth scroll to bottom
             setTimeout(() => {
@@ -1649,5 +1715,11 @@
             }
         });
     </script>
+    
+    <!-- Side Navigation Script -->
+    <script src="/side-nav.js?v=3"></script>
+    
+    <!-- Footer Script -->
+    <script src="/footer.js?v=1"></script>
 </body>
 </html>
