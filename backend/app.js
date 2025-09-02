@@ -13,6 +13,9 @@ const http = require('http');
 const socketIo = require('socket.io');
 const OpenAI = require('openai');
 
+// Initialize Firebase
+const { auth, db } = require('./config/firebase');
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -79,6 +82,13 @@ app.use((req, res, next) => {
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end(); // No content response
 });
+
+// Firebase Routes
+const authRoutes = require('./routes/auth');
+const databaseRoutes = require('./routes/database');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/db', databaseRoutes);
 
 // Add error handling middleware for debugging
 app.use((err, req, res, next) => {

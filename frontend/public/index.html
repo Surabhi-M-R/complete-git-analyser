@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/side-nav.css?v=2">
     <link rel="stylesheet" href="/footer.css">
+    <link rel="stylesheet" href="/auth.css">
     <style>
         /* Modern Hacker-style glassmorphism design */
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
@@ -996,6 +997,39 @@
             box-shadow: 0 0 15px rgba(0, 255, 127, 0.4);
         }
 
+        /* Logout button styling */
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logout-btn {
+            background: var(--danger-light);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            font-family: 'JetBrains Mono', monospace;
+            text-shadow: 0 0 5px currentColor;
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 71, 87, 0.2);
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.3);
+            transform: translateY(-2px);
+        }
+
         /* Responsive design */
         @media (max-width: 1024px) {
             .progress-bar-container {
@@ -1134,6 +1168,11 @@
                 <div class="progress-text-container">
                     <div class="progress-text" id="currentProgress">Ready</div>
                     <div class="progress-details" id="progressDetails">System initialized</div>
+                </div>
+                <div class="user-actions">
+                    <button onclick="logout()" class="logout-btn" id="logoutBtn" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
                 </div>
             </div>
             <div class="progress-bar-container">
@@ -1721,5 +1760,62 @@
     
     <!-- Footer Script -->
     <script src="/footer.js?v=1"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="/firebase-config.js"></script>
+    
+    <!-- Authentication Script -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6rxGQewpeZ-zbVwETTE0OFvSiN0_Kkcs",
+            authDomain: "zeroops-77de2.firebaseapp.com",
+            projectId: "zeroops-77de2",
+            storageBucket: "zeroops-77de2.firebasestorage.app",
+            messagingSenderId: "511958088139",
+            appId: "1:511958088139:web:521c94d1921b0412339e4e",
+            measurementId: "G-FGVTV2WRKB"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Logout function
+        window.logout = async function() {
+            try {
+                await auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+
+        // Check authentication state
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // User is not signed in, redirect to login page
+                window.location.href = 'login.html';
+            } else {
+                // User is signed in, show user info
+                console.log('User is signed in:', user.email);
+                
+                // Update UI to show user is logged in
+                const progressText = document.getElementById('currentProgress');
+                const logoutBtn = document.getElementById('logoutBtn');
+                
+                if (progressText) {
+                    progressText.textContent = `Welcome, ${user.email}`;
+                }
+                
+                if (logoutBtn) {
+                    logoutBtn.style.display = 'inline-flex';
+                }
+            }
+        });
+    </script>
 </body>
 </html>

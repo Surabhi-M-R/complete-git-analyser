@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Repository Analyzer Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Import fonts */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary: #00ff7f;
+            --primary-dark: #00cc66;
+            --primary-light: rgba(0, 255, 127, 0.1);
+            --secondary: #0099ff;
+            --secondary-light: rgba(0, 153, 255, 0.1);
+            --accent: #a777e3;
+            --accent-light: rgba(167, 119, 227, 0.1);
+            --danger: #ff4757;
+            --danger-light: rgba(255, 71, 87, 0.1);
+            --dark: #0a0a0a;
+            --darker: #050505;
+            --light: #f5f8ff;
+            --glass-light: rgba(255, 255, 255, 0.05);
+            --glass-dark: rgba(0, 0, 0, 0.3);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, var(--darker) 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: var(--light);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Matrix Rain Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Animated background gradient */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Main container */
+        .login-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--primary);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0, 255, 127, 0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+        }
+
+        .login-header p {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d1d5db;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #f3f4f6;
+            font-size: 14px;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 127, 0.3);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .form-group input::placeholder {
+            color: #6b7280;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            box-shadow: 0 0 20px rgba(0, 255, 127, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-footer p {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .login-footer a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        .footer-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .footer-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: transparent;
+            color: #d1d5db;
+            text-decoration: none;
+            text-align: center;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .footer-btn:hover {
+            background: rgba(0, 255, 127, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .footer-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #000000;
+            border-color: var(--primary);
+        }
+
+        .footer-btn.primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            box-shadow: 0 0 15px rgba(0, 255, 127, 0.3);
+        }
+
+        /* Error/Success Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .message.error {
+            background: var(--danger-light);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .message.success {
+            background: rgba(0, 255, 127, 0.1);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .message.hidden {
+            display: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 10px;
+            }
+            
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Password toggle */
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group input[type="password"] {
+            padding-right: 45px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <canvas id="matrix-canvas"></canvas>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1><i class="fas fa-code"></i> Repo Analyzer</h1>
+                <p>Sign in to analyze your repositories</p>
+            </div>
+
+            <!-- Error/Success Message -->
+            <div id="message" class="message hidden"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                    </button>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span id="loginBtnText">Sign In</span>
+                    <span id="loginSpinner" class="spinner hidden"></span>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Don't have an account? <a href="#" onclick="showSignUp()">Sign up here</a></p>
+                
+                <div class="footer-buttons">
+                    <a href="#" class="footer-btn" onclick="forgotPassword()">Forgot Password?</a>
+                    <a href="index.html" class="footer-btn primary">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6rxGQewpeZ-zbVwETTE0OFvSiN0_Kkcs",
+            authDomain: "zeroops-77de2.firebaseapp.com",
+            projectId: "zeroops-77de2",
+            storageBucket: "zeroops-77de2.firebasestorage.app",
+            messagingSenderId: "511958088139",
+            appId: "1:511958088139:web:521c94d1921b0412339e4e",
+            measurementId: "G-FGVTV2WRKB"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM elements
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginBtnText = document.getElementById('loginBtnText');
+        const loginSpinner = document.getElementById('loginSpinner');
+        const messageDiv = document.getElementById('message');
+
+        // Show message function
+        function showMessage(text, type = 'error') {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.classList.remove('hidden');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Toggle password visibility
+        window.togglePassword = function() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('passwordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        };
+
+        // Show sign up
+        window.showSignUp = function() {
+            // Switch to sign up mode
+            document.querySelector('.login-header h1').innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+            document.querySelector('.login-header p').textContent = 'Create a new account to get started';
+            document.getElementById('loginBtnText').textContent = 'Create Account';
+            document.querySelector('.login-footer p').innerHTML = 'Already have an account? <a href="#" onclick="showLogin()">Sign in here</a>';
+            document.querySelector('.footer-btn').textContent = 'Back to Sign In';
+            document.querySelector('.footer-btn').setAttribute('onclick', 'showLogin()');
+            
+            // Update form action
+            loginForm.setAttribute('data-mode', 'signup');
+        };
+
+        // Show login
+        window.showLogin = function() {
+            // Switch to login mode
+            document.querySelector('.login-header h1').innerHTML = '<i class="fas fa-code"></i> Repo Analyzer';
+            document.querySelector('.login-header p').textContent = 'Sign in to analyze your repositories';
+            document.getElementById('loginBtnText').textContent = 'Sign In';
+            document.querySelector('.login-footer p').innerHTML = 'Don\'t have an account? <a href="#" onclick="showSignUp()">Sign up here</a>';
+            document.querySelector('.footer-btn').textContent = 'Forgot Password?';
+            document.querySelector('.footer-btn').setAttribute('onclick', 'forgotPassword()');
+            
+            // Update form action
+            loginForm.setAttribute('data-mode', 'login');
+        };
+
+        // Forgot password
+        window.forgotPassword = function() {
+            showMessage('Password reset functionality coming soon!', 'success');
+        };
+
+        // Save user data to Firestore
+        async function saveUserToDatabase(user, additionalData = {}) {
+            try {
+                const userData = {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName || '',
+                    createdAt: new Date().toISOString(),
+                    lastLoginAt: new Date().toISOString(),
+                    ...additionalData
+                };
+
+                await setDoc(doc(db, 'users', user.uid), userData, { merge: true });
+                console.log('User data saved to database:', userData);
+            } catch (error) {
+                console.error('Error saving user data:', error);
+            }
+        }
+
+        // Check if user exists in database
+        async function checkUserExists(email) {
+            try {
+                // This is a simplified check - in a real app, you might want to query by email
+                // For now, we'll just return false and let Firebase handle the authentication
+                return false;
+            } catch (error) {
+                console.error('Error checking user existence:', error);
+                return false;
+            }
+        }
+
+        // Login form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const mode = loginForm.getAttribute('data-mode') || 'login';
+
+            if (!email || !password) {
+                showMessage('Please fill in all fields');
+                return;
+            }
+
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtnText.classList.add('hidden');
+            loginSpinner.classList.remove('hidden');
+
+            try {
+                if (mode === 'signup') {
+                    // Create new user account
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    // Send email verification
+                    await sendEmailVerification(user);
+                    
+                    // Save user data to Firestore
+                    await saveUserToDatabase(user, {
+                        isNewUser: true,
+                        emailVerified: false
+                    });
+                    
+                    showMessage('Account created successfully! Please check your email to verify your account.', 'success');
+                    
+                    // Switch back to login mode after successful signup
+                    setTimeout(() => {
+                        showLogin();
+                        showMessage('You can now sign in with your new account.', 'success');
+                    }, 2000);
+                    
+                } else {
+                    // Sign in existing user
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    // Update last login time in database
+                    await saveUserToDatabase(user, {
+                        lastLoginAt: new Date().toISOString()
+                    });
+                    
+                    showMessage('Login successful! Redirecting...', 'success');
+                    
+                    // Redirect to dashboard after successful login
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                
+                let errorMessage = mode === 'signup' ? 'Sign up failed. Please try again.' : 'Login failed. Please try again.';
+                
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'No account found with this email address.';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Incorrect password. Please try again.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address format.';
+                        break;
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'An account with this email already exists. Please sign in instead.';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Password should be at least 6 characters long.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Too many failed attempts. Please try again later.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Network error. Please check your connection.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'This account has been disabled. Please contact support.';
+                        break;
+                }
+                
+                showMessage(errorMessage);
+            } finally {
+                // Reset button state
+                loginBtn.disabled = false;
+                loginBtnText.classList.remove('hidden');
+                loginSpinner.classList.add('hidden');
+            }
+        });
+
+        // Check if user is already logged in
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in, redirect to dashboard
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+
+    <!-- Matrix Rain Effect -->
+    <script src="matrix-rain.js"></script>
+</body>
+</html>
