@@ -361,8 +361,8 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         
-        // Firebase configuration
-        const firebaseConfig = {
+        // Firebase configuration - using centralized config
+        const firebaseConfig = window.firebaseConfig || {
             apiKey: "AIzaSyB6rxGQewpeZ-zbVwETTE0OFvSiN0_Kkcs",
             authDomain: "zeroops-77de2.firebaseapp.com",
             projectId: "zeroops-77de2",

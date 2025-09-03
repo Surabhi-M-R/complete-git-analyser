@@ -1766,11 +1766,13 @@
     
     <!-- Authentication Script -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        console.log('Starting authentication script...');
         
-        // Firebase configuration
-        const firebaseConfig = {
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        
+        // Firebase configuration - using centralized config
+        const firebaseConfig = window.firebaseConfig || {
             apiKey: "AIzaSyB6rxGQewpeZ-zbVwETTE0OFvSiN0_Kkcs",
             authDomain: "zeroops-77de2.firebaseapp.com",
             projectId: "zeroops-77de2",
@@ -1780,28 +1782,53 @@
             measurementId: "G-FGVTV2WRKB"
         };
 
+        console.log('Firebase config loaded:', firebaseConfig);
+
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        let app, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            alert('Firebase initialization failed: ' + error.message);
+            // If Firebase fails to initialize, redirect to login
+            window.location.href = 'login.html';
+            return;
+        }
 
         // Logout function
         window.logout = async function() {
             try {
-                await auth.signOut();
+                await signOut(auth);
+                console.log('User signed out successfully');
                 window.location.href = 'login.html';
             } catch (error) {
                 console.error('Logout error:', error);
+                // Even if logout fails, redirect to login
+                window.location.href = 'login.html';
             }
         };
 
         // Check authentication state
+        console.log('Setting up auth state listener...');
         onAuthStateChanged(auth, (user) => {
+            console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+            console.log('User details:', user);
+            
             if (!user) {
                 // User is not signed in, redirect to login page
-                window.location.href = 'login.html';
+                console.log('No user found, redirecting to login...');
+                alert('No user found, redirecting to login...');
+                // Add a small delay to prevent flash
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 100);
             } else {
                 // User is signed in, show user info
                 console.log('User is signed in:', user.email);
+                alert('User is signed in: ' + user.email);
                 
                 // Update UI to show user is logged in
                 const progressText = document.getElementById('currentProgress');
@@ -1816,6 +1843,22 @@
                 }
             }
         });
+
+        // Additional check after a longer delay to ensure auth state is properly checked
+        setTimeout(() => {
+            console.log('Timeout check - current user:', auth.currentUser);
+            if (auth.currentUser === null) {
+                console.log('No current user after timeout, redirecting to login...');
+                alert('No current user after timeout, redirecting to login...');
+                window.location.href = 'login.html';
+            }
+        }, 3000);
+
+        // Immediate check
+        console.log('Immediate check - current user:', auth.currentUser);
+        if (auth.currentUser === null) {
+            console.log('No current user immediately, will redirect...');
+        }
     </script>
 </body>
 </html>

@@ -1,33 +1,44 @@
-// Firebase Configuration
-const { initializeApp } = require('firebase/app');
-const { getAuth } = require('firebase/auth');
-const { getFirestore } = require('firebase/firestore');
-const { getAnalytics } = require('firebase/analytics');
+// Firebase Admin SDK Configuration
+const admin = require('firebase-admin');
 
-// Firebase configuration from environment variables
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID
-};
+// Initialize Firebase Admin SDK
+let app, auth, db;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Firebase services
-const auth = getAuth(app);
-const db = getFirestore(app);
-const analytics = getAnalytics(app);
+try {
+  // Check if Firebase Admin is already initialized
+  if (admin.apps.length === 0) {
+    // Initialize with default credentials or service account
+    // For development, we'll use the project ID from environment or default
+    const projectId = process.env.FIREBASE_PROJECT_ID || 'zeroops-77de2';
+    
+    app = admin.initializeApp({
+      projectId: projectId,
+      // In production, you would use a service account key file
+      // For development, Firebase Admin SDK can use Application Default Credentials
+    });
+    
+    console.log('Firebase Admin SDK initialized successfully');
+  } else {
+    app = admin.app();
+    console.log('Using existing Firebase Admin SDK instance');
+  }
+  
+  // Initialize Firebase services
+  auth = admin.auth();
+  db = admin.firestore();
+  
+} catch (error) {
+  console.error('Firebase Admin SDK initialization error:', error);
+  // Fallback: initialize without authentication for development
+  app = null;
+  auth = null;
+  db = null;
+}
 
 // Export Firebase services
 module.exports = {
   app,
   auth,
   db,
-  analytics,
-  firebaseConfig
+  admin
 };
