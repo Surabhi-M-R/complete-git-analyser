@@ -15,7 +15,15 @@ function getEnvVar(name, defaultValue) {
 }
 
 // Configuration object - uses environment variables with fallbacks
-
+const firebaseConfig = {
+  apiKey: getEnvVar('FIREBASE_API_KEY', "AIzaSyB6rxGQewpeZ-zbVwETTE0OFvSiN0_Kkcs"),
+  authDomain: getEnvVar('FIREBASE_AUTH_DOMAIN', "zeroops-77de2.firebaseapp.com"),
+  projectId: getEnvVar('FIREBASE_PROJECT_ID', "zeroops-77de2"),
+  storageBucket: getEnvVar('FIREBASE_STORAGE_BUCKET', "zeroops-77de2.firebasestorage.app"),
+  messagingSenderId: getEnvVar('FIREBASE_MESSAGING_SENDER_ID', "511958088139"),
+  appId: getEnvVar('FIREBASE_APP_ID', "1:511958088139:web:521c94d1921b0412339e4e"),
+  measurementId: getEnvVar('FIREBASE_MEASUREMENT_ID', "G-FGVTV2WRKB")
+};
 
 // Export for use in other scripts
 window.firebaseConfig = firebaseConfig;
